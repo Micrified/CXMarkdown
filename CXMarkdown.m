@@ -5,30 +5,26 @@
 
 #import "CXMarkdown.h"
 
-@interface CXMarkdown ()
-@property (nonatomic)CFMutableAttributedStringRef *mutableAttributedString;
-@end
-
 @implementation CXMarkdown
 
 #pragma mark Helper Methods
 
 /* Returns font adjusted for symbolic trait mask */
--(UIFont *)newFontFromFont:(UIFont *)font Mask:(CTFontSymbolicTraits)mask {
++(UIFont *)newFontFromFont:(UIFont *)font Mask:(CTFontSymbolicTraits)mask {
     CTFontRef fontRef = (__bridge CTFontRef)font;
     UIFont *newFont = (UIFont *)CFBridgingRelease(CTFontCreateCopyWithSymbolicTraits(fontRef, [font pointSize], NULL, mask, mask));
     return newFont;
 }
 
 /* Returns symbolic trait mask for markdown type */
--(uint32_t)symbolicTraitForMarkdownType:(CXMarkdownType)markdown {
++(uint32_t)symbolicTraitForMarkdownType:(CXMarkdownType)markdown {
     if (markdown == CXMarkdownTypeItalics){return UIFontDescriptorTraitItalic;}
     if (markdown == CXMarkdownTypeBold){return UIFontDescriptorTraitBold;}
     return 0;
 }
 
 /* Returns a character array for a CFMutableAttributedStringRef string */
--(char *)charArrayFromAttributedString:(CFMutableAttributedStringRef *)mutableAttributedString {
++(char *)charArrayFromAttributedString:(CFMutableAttributedStringRef *)mutableAttributedString {
     CFStringRef string = CFAttributedStringGetString(*mutableAttributedString);
     CFIndex len = CFStringGetLength(string);
     CFIndex maxsize = CFStringGetMaximumSizeForEncoding(len, kCFStringEncodingUTF8)+1;
@@ -40,7 +36,7 @@
 }
 
 /* Removes formatting characters over a range depending on markdown type. Does not cover hyperlinks */
--(void)removeMarkdownType:(CXMarkdownType)type fromString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range {
++(void)removeMarkdownType:(CXMarkdownType)type fromString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
     CFAttributedStringRef replacementString; UInt8 leadingOffset = 0; UInt8 trailingOffset = 0;
@@ -73,7 +69,7 @@
 #pragma mark Formatting Methods
 
 /* Replaces range of string with the link title, and adds the URL under the NSLinkAttributeName key to the attributes of the string */
--(void)applyHyperlinkToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range partitionIndex:(UInt32)pindex {
++(void)applyHyperlinkToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range partitionIndex:(UInt32)pindex {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
     CFAttributedStringRef title = CFAttributedStringCreateWithSubstring(kCFAllocatorDefault, *mutableAttributedString, CFRangeMake(range.location+1, pindex - (range.location+2)));
@@ -93,7 +89,7 @@
 
 
 /* Replaces range of string with superscripted variant */
--(void)applySuperscriptToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range degree:(UInt32)degree {
++(void)applySuperscriptToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range degree:(UInt32)degree {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
     /* Set Offset */
@@ -108,7 +104,7 @@
 }
 
 /* Replaces range of string with a struck-through variant */
--(void)applyStrikethroughToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range {
++(void)applyStrikethroughToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
     CFAttributedStringSetAttribute(*mutableAttributedString, range, (__bridge CFStringRef)NSStrikethroughStyleAttributeName, (CFTypeRef)[NSNumber numberWithInt:1]);
@@ -117,7 +113,7 @@
 }
 
 /* Replaces range of string with a bolded or italicized variant */
--(void)applyItalicsOrBoldToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range type:(CXMarkdownType)type {
++(void)applyItalicsOrBoldToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range type:(CXMarkdownType)type {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
     UInt32 i = (UInt32)range.location;
@@ -142,8 +138,12 @@
 
 #pragma mark Parser
 
--(void)parseString:(char *)string ofLength:(UInt16)length {
-    CFAbsoluteTime a = CFAbsoluteTimeGetCurrent();
++(void)parseString:(CFMutableAttributedStringRef *)mutableAttributedString ofLength:(UInt16)length {
+    
+    /* Obtain char array */
+    char *string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
+    
+    //CFAbsoluteTime a = CFAbsoluteTimeGetCurrent();
     /* Variables */
     /* (NAME)Count : Tracks occurances of token characters */
     /* (NAME)Open : Tracks whether or not the markdown style has been evoked */
@@ -169,13 +169,13 @@
                     if ((hypPartitionIndex > boldOpenIndex) && (hypPartitionIndex > italOpenIndex) && (hypPartitionIndex > tildaOpenIndex) && (hypPartitionIndex > caretOpenIndex)){
                         
                         /* Apply hyperlink attributes, and replace formatting */
-                        [self applyHyperlinkToString:[self mutableAttributedString] range:CFRangeMake(hypOpenIndex, (i - hypOpenIndex)+1) partitionIndex:hypPartitionIndex];
+                        [CXMarkdown applyHyperlinkToString:mutableAttributedString range:CFRangeMake(hypOpenIndex, (i - hypOpenIndex)+1) partitionIndex:hypPartitionIndex];
                         
                         /* Adjust length and index */
                         length -= (1 + (i - hypPartitionIndex)); i -= (2 + (i - hypPartitionIndex));
     
                         /* Update string */
-                        free(string); string = [self charArrayFromAttributedString:[self mutableAttributedString]];
+                        free(string); string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
                     }
                     
                     hypPartitionIndex = 0; hypOpen = 0;
@@ -203,16 +203,16 @@
                             italOpen = 0; boundary = 2;
                             
                             /* Apply italic attributes */
-                            [self applyItalicsOrBoldToString:[self mutableAttributedString] range:CFRangeMake(italOpenIndex, (i - italOpenIndex)) type:CXMarkdownTypeItalics];
+                            [CXMarkdown applyItalicsOrBoldToString:mutableAttributedString range:CFRangeMake(italOpenIndex, (i - italOpenIndex)) type:CXMarkdownTypeItalics];
                             
                             /* Remove formatting */
-                            [self removeMarkdownType:CXMarkdownTypeItalics fromString:[self mutableAttributedString] range:CFRangeMake(italOpenIndex, (i - italOpenIndex))];
+                            [CXMarkdown removeMarkdownType:CXMarkdownTypeItalics fromString:mutableAttributedString range:CFRangeMake(italOpenIndex, (i - italOpenIndex))];
                             
                             /* Adjust length and index */
                             length -= 2; i -= 2;
                             
                             /* Update string */
-                            free(string); string = [self charArrayFromAttributedString:[self mutableAttributedString]];
+                            free(string); string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
                             
                             /* Adjust variables */
                             if (boldOpen && boldOpenIndex > italOpenIndex){boldOpenIndex -= 1;}
@@ -236,16 +236,16 @@
                             boldOpen = 0; boundary = 2;
                             
                             /* Apply bold attributes */
-                            [self applyItalicsOrBoldToString:[self mutableAttributedString] range:CFRangeMake(boldOpenIndex, (i - boldOpenIndex)) type:CXMarkdownTypeBold];
+                            [CXMarkdown applyItalicsOrBoldToString:mutableAttributedString range:CFRangeMake(boldOpenIndex, (i - boldOpenIndex)) type:CXMarkdownTypeBold];
                             
                             /* Remove formatting */
-                            [self removeMarkdownType:CXMarkdownTypeBold fromString:[self mutableAttributedString] range:CFRangeMake(boldOpenIndex, (i - boldOpenIndex))];
+                            [CXMarkdown removeMarkdownType:CXMarkdownTypeBold fromString:mutableAttributedString range:CFRangeMake(boldOpenIndex, (i - boldOpenIndex))];
                             
                             /* Adjust length and index */
                             length -= 4; i -= 4;
                             
                             /* Update string */
-                            free (string); string = [self charArrayFromAttributedString:[self mutableAttributedString]];
+                            free (string); string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
                             
                             /* Adjust variables */
                             if (italOpen && italOpenIndex > boldOpenIndex){italOpenIndex -= 2;}
@@ -278,16 +278,16 @@
                             tildaOpen = 0;
                             
                             /* Apply strikethrough attributes */
-                            [self applyStrikethroughToString:[self mutableAttributedString] range:CFRangeMake(tildaOpenIndex, (i - tildaOpenIndex))];
+                            [CXMarkdown applyStrikethroughToString:mutableAttributedString range:CFRangeMake(tildaOpenIndex, (i - tildaOpenIndex))];
                             
                             /* Remove formatting */
-                            [self removeMarkdownType:CXMarkdownTypeStrikethrough fromString:[self mutableAttributedString] range:CFRangeMake(tildaOpenIndex, (i - tildaOpenIndex))];
+                            [CXMarkdown removeMarkdownType:CXMarkdownTypeStrikethrough fromString:mutableAttributedString range:CFRangeMake(tildaOpenIndex, (i - tildaOpenIndex))];
                             
                             /* Adjust length and index */
                             length -= 4; i -= 4;
                             
                             /* Update string */
-                            free(string); string = [self charArrayFromAttributedString:[self mutableAttributedString]];
+                            free(string); string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
                             
                             /* Adjust variables */
                             if (boldOpen && boldOpenIndex > tildaOpenIndex){boldOpenIndex -= 2;}
@@ -310,16 +310,16 @@
             if (caretOpen){
                 
                 /* Apply superscript attributes */
-                [self applySuperscriptToString:[self mutableAttributedString] range:CFRangeMake(caretOpenIndex, (i - caretOpenIndex)) degree:caretCount];
+                [CXMarkdown applySuperscriptToString:mutableAttributedString range:CFRangeMake(caretOpenIndex, (i - caretOpenIndex)) degree:caretCount];
                 
                 /* Remove formatting */
-                [self removeMarkdownType:CXMarkdownTypeSuperscript fromString:[self mutableAttributedString] range:CFRangeMake(caretOpenIndex, 1)];
+                [CXMarkdown removeMarkdownType:CXMarkdownTypeSuperscript fromString:mutableAttributedString range:CFRangeMake(caretOpenIndex, 1)];
                 
                 /* Adjust length and index */
                 length -= 1; i -= 1; 
                 
                 /* Update string */
-                free(string); string = [self charArrayFromAttributedString:[self mutableAttributedString]];
+                free(string); string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
                 
                 /* Increase degree */
                 caretCount++; caretOpenIndex = i;
@@ -334,16 +334,16 @@
             if (caretCount && (string[i] == ' ' || string[i] == '\0')){
                 
                 /* Apply superscript attributes */
-                [self applySuperscriptToString:[self mutableAttributedString] range:CFRangeMake(caretOpenIndex, (i - caretOpenIndex)) degree:caretCount];
+                [CXMarkdown applySuperscriptToString:mutableAttributedString range:CFRangeMake(caretOpenIndex, (i - caretOpenIndex)) degree:caretCount];
                 
                 /* Remove formatting */
-                [self removeMarkdownType:CXMarkdownTypeSuperscript fromString:[self mutableAttributedString] range:CFRangeMake(caretOpenIndex, 1)];
+                [CXMarkdown removeMarkdownType:CXMarkdownTypeSuperscript fromString:mutableAttributedString range:CFRangeMake(caretOpenIndex, 1)];
                 
                 /* Adjust length and index */
                 length -= 1; i -= 1;
                 
                 /* Update string */
-                free(string); string = [self charArrayFromAttributedString:[self mutableAttributedString]];
+                free(string); string = [CXMarkdown charArrayFromAttributedString:mutableAttributedString];
                 
                 /* Clear out degree and close superscript tracking */
                 caretOpen = 0; caretCount = 0;
@@ -359,24 +359,17 @@
     /* Free allocated memory */
     free(string);
     
-    CFAbsoluteTime b = CFAbsoluteTimeGetCurrent();
-    printf("Time in Parser: %f\n",b-a);
+    //CFAbsoluteTime b = CFAbsoluteTimeGetCurrent();
+    /* printf("Time in Parser: %f\n",b-a); */
 }
 
 #pragma mark Public Methods
 
 /* Returns an NSAttributedString with applied Markdown based upon character attributes */
--(NSAttributedString *)attributedStringFromString:(NSString *)string attributes:(NSDictionary *)fontAttributes {
++(NSAttributedString *)attributedStringFromString:(NSString *)string attributes:(NSDictionary *)fontAttributes {
     
     /* Obtain string length */
     UInt16 len = [string length];
-    
-    /* Obtain string as char array */
-    const char *cstring = [string cStringUsingEncoding:NSUTF8StringEncoding];
-    
-    /* Obtain Mutable Copy */
-    char *cstringCopy = malloc(len * sizeof(char));
-    memcpy(cstringCopy, cstring, len);
     
     /* Build Attributed String */
     CFStringRef cfString = (__bridge CFStringRef)string;
@@ -392,13 +385,10 @@
     /* End Editing */
     CFAttributedStringEndEditing(mutableAttributedString);
     
-    /* Set Property */
-    [self setMutableAttributedString:&mutableAttributedString];
-    
     /* Parse String & Format */
-    [self parseString:cstringCopy ofLength:len];
+    [CXMarkdown parseString:&mutableAttributedString ofLength:len];
     
-    NSMutableAttributedString *returnString = (__bridge NSMutableAttributedString*)*_mutableAttributedString;
+    NSMutableAttributedString *returnString = (__bridge NSMutableAttributedString *)mutableAttributedString;
     
     /* Free Memory */
     CFRelease(cfString);
@@ -409,21 +399,21 @@
 }
 
 /* Returns an NSAttributedString with applied Markdown */
--(NSAttributedString *)attributedStringFromString:(NSString *)string withFontDescriptor:(UIFontDescriptor *)fontDescriptor {
++(NSAttributedString *)attributedStringFromString:(NSString *)string withFontDescriptor:(UIFontDescriptor *)fontDescriptor {
     
     UIFont *font = [UIFont fontWithDescriptor:fontDescriptor size:[[[fontDescriptor fontAttributes]valueForKey:UIFontDescriptorSizeAttribute]floatValue]];
     NSNumber *symbolicTrait = [NSNumber numberWithLongLong:[fontDescriptor symbolicTraits]];
     
     NSDictionary *fontAttributes = [[NSDictionary alloc]initWithObjects:@[font,symbolicTrait] forKeys:@[NSFontAttributeName,UIFontSymbolicTrait]];
     
-    return [self attributedStringFromString:string attributes:fontAttributes];
+    return [CXMarkdown attributedStringFromString:string attributes:fontAttributes];
 }
 
 /* Returns an NSAttributedString with applied Markdown */
--(NSAttributedString *)attributedStringFromString:(NSString *)string {
++(NSAttributedString *)attributedStringFromString:(NSString *)string {
     UIFont *defaultFont = [UIFont systemFontOfSize:[UIFont systemFontSize]];
     UIFontDescriptor *defaultDescriptor = [UIFontDescriptor fontDescriptorWithName:[defaultFont fontName] size:[defaultFont pointSize]];
-    return [self attributedStringFromString:string withFontDescriptor:defaultDescriptor];
+    return [CXMarkdown attributedStringFromString:string withFontDescriptor:defaultDescriptor];
 }
 
 @end

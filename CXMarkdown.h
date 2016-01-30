@@ -28,7 +28,7 @@ typedef enum {
 /*!
  @brief Returns an NSAttributedString instance with formatted markdown and font attributes.
  
- @discussion This instance method accepts an NSString instance containing the target string, and an NSDictionary instance containing the associated font attributes to be applied to the string. It outputs the attributed string with both the markdown rendered and the desired font attributes applied.
+ @discussion This class method accepts an NSString instance containing the target string, and an NSDictionary instance containing the associated font attributes to be applied to the string. It outputs the attributed string with both the markdown rendered and the desired font attributes applied.
  
  @param  string * The NSString instance representing the target string.
  
@@ -36,12 +36,12 @@ typedef enum {
  
  @return NSAttibutedString * The formatted and rendered NSAttributedString instance.
  */
--(NSAttributedString *)attributedStringFromString:(NSString *)string attributes:(NSDictionary *)fontAttributes;
++(NSAttributedString *)attributedStringFromString:(NSString *)string attributes:(NSDictionary *)fontAttributes;
 
 /*!
  @brief Returns an NSAttributedString instance with formatted markdown and font attributes.
  
- @discussion This instance method accepts an NSString instance containing the target string, and a UIFontDescriptor instance containing some attributes to be applied to the output. Because a UIFontDescriptor uses a different fontAttributes dictionary to that of NSAttributedStrings, only the font and symbolic traits are extracted and applied. The output is the attributed string with the markdown rendered and the font attributes extracted from the fontDescriptor applied.
+ @discussion This class method accepts an NSString instance containing the target string, and a UIFontDescriptor instance containing some attributes to be applied to the output. Because a UIFontDescriptor uses a different fontAttributes dictionary to that of NSAttributedStrings, only the font and symbolic traits are extracted and applied. The output is the attributed string with the markdown rendered and the font attributes extracted from the fontDescriptor applied.
  
  @param  string * The NSString instance representing the target string.
  
@@ -49,18 +49,18 @@ typedef enum {
  
  @return NSAttibutedString * The formatted and rendered NSAttributedString instance.
  */
--(NSAttributedString *)attributedStringFromString:(NSString *)string withFontDescriptor:(UIFontDescriptor *)fontDescriptor;
++(NSAttributedString *)attributedStringFromString:(NSString *)string withFontDescriptor:(UIFontDescriptor *)fontDescriptor;
 
 /*!
  @brief Returns an NSAttributedString instance with formatted markdown.
  
- @discussion This instance method accepts an NSString instance containing the target string, and outputs a NSAttributedString instance with the markdown rendered, and respective font attributes applied. It uses system font with the system font size in it's output.
+ @discussion This class method accepts an NSString instance containing the target string, and outputs a NSAttributedString instance with the markdown rendered, and respective font attributes applied. It uses system font with the system font size in it's output.
  
  @param  string * The NSString instance representing the target string.
  
  
  @return NSAttibutedString * The rendered NSAttributedString instance.
  */
--(NSAttributedString *)attributedStringFromString:(NSString *)string;
++(NSAttributedString *)attributedStringFromString:(NSString *)string;
 
 @end
