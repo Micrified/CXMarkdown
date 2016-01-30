@@ -27,4 +27,6 @@ Finally, please don't parse strings larger than 2<sup>16</sup> characters in len
     NSAttributedString *attributedString = [CXMarkdown attributedStringFromString:myString withFontDescriptor:fontDescriptor];
 
 **Output:**
+
+
 ![UILabel](https://imgur.com/XI7Dxw8.png "NSAttributedString placed in UILabel instance.")
