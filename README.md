@@ -13,3 +13,20 @@ CXMarkdown currently only renders:
 
 CXMarkdown will be extended to support quotes, and code blocks. Please inform me of bugs and other issues if applicable.
 Finally, please don't parse strings larger than 2<sup>16</sup> characters in length unless you plan on convering the indexing variables to 32 bit integer types.
+
+**Example:**
+
+
+    /* Create your NSString instance */
+    NSString *myString = @"Hello. This sting uses *italics*, **bold**, ***italics-and-bold***, ~~strikethroughs~~, and even super^scripting and [hyperlinks](http://www.google.com) embedded within markdown.";
+    
+    /* Create your UIFontDescriptor instance */
+    UIFontDescriptor *fontDescriptor = [UIFontDescriptor fontDescriptorWithName:@"Avenir-Book" size:14.0f];
+    
+    /* Obtain the NSAttributedString instance with rendered markdown */
+    NSAttributedString *attributedString = [CXMarkdown attributedStringFromString:myString withFontDescriptor:fontDescriptor];
+
+**Output:**
+
+
+![UILabel](https://imgur.com/XI7Dxw8.png "NSAttributedString placed in UILabel instance.")
