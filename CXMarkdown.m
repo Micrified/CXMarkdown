@@ -92,13 +92,8 @@
 +(void)applySuperscriptToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range degree:(UInt32)degree {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
-    /* Set Offset */
-    CFAttributedStringSetAttribute(*mutableAttributedString, range, (__bridge CFStringRef)NSBaselineOffsetAttributeName, (CFTypeRef)[NSNumber numberWithInt:(5 * degree) + (1.5*(1-degree))]);
-    /* Extract Attributes from location + 1 to not obtain caret attributes */
-    CFDictionaryRef attributes = CFAttributedStringGetAttributes(*mutableAttributedString, range.location+1, NULL);
-    UIFont *font = CFDictionaryGetValue(attributes, (__bridge CFStringRef)NSFontAttributeName);
-    font = [font fontWithSize:(0.75 * [font pointSize])];
-    CFAttributedStringSetAttribute(*mutableAttributedString, range, (__bridge CFStringRef)NSFontAttributeName, (CFTypeRef)font);
+    /* Set Attribute */
+    CFAttributedStringSetAttribute(*mutableAttributedString, range, kCTSuperscriptAttributeName, (CFTypeRef)[NSNumber numberWithInteger:degree]);
     
     CFAttributedStringEndEditing(*mutableAttributedString);
 }
