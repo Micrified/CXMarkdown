@@ -102,6 +102,7 @@
 +(void)applyStrikethroughToString:(CFMutableAttributedStringRef *)mutableAttributedString range:(CFRange)range {
     CFAttributedStringBeginEditing(*mutableAttributedString);
     
+    /* Set Attribute */
     CFAttributedStringSetAttribute(*mutableAttributedString, range, (__bridge CFStringRef)NSStrikethroughStyleAttributeName, (CFTypeRef)[NSNumber numberWithInt:1]);
     
     CFAttributedStringEndEditing(*mutableAttributedString);
@@ -151,6 +152,11 @@
     uint8_t boundary = 2; uint16_t hypPartitionIndex = 0;
     
     for (int i = 0; i < length+1; i++){
+        
+        /* Escape Sequences */
+        if (string[i] == '\\'){
+            i++; continue;
+        }
         
         /* Hyperlink */
         if (hypOpen){
